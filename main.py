@@ -34,6 +34,7 @@ def read_data():
 
 
 data = read_data()
+users = [1606222178, 1542386993]
 
 
 def add_json(new_data, category, filename='data.json'):
@@ -81,14 +82,14 @@ class FormRemove(StatesGroup):
     name = State()
 
 
-@dp.message_handler(commands=['add', 'добавить'])
+@dp.message_handler(lambda message: message.chat.id in users, commands=['add', 'добавить'])
 async def cmd_add_start(message: types.Message):
     await FormAdd.category.set()
     markup = nav.add_remove
     await message.reply("Выберите категорию", reply_markup=markup)
 
 
-@dp.message_handler(commands=['remove', 'удалить'])
+@dp.message_handler(lambda message: message.chat.id in users, commands=['remove', 'удалить'])
 async def cmd_remove_start(message: types.Message):
     await FormRemove.category.set()
     markup = nav.add_remove
@@ -105,7 +106,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
     logging.info('Cancelling state %r', current_state)
     await state.finish()
-    await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
+    await message.reply('Cancelled.', reply_markup=nav.welcome_keyboard)
 
 
 # remove state
