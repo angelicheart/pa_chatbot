@@ -10,7 +10,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-from config import telegram_token, project_id
+from config import telegram_token, project_id, users
 import keyboards as nav
 
 
@@ -34,7 +34,6 @@ def read_data():
 
 
 data = read_data()
-users = [1606222178, 1542386993]
 
 
 def add_json(new_data, category, filename='data.json'):
