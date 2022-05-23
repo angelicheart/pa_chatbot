@@ -66,7 +66,7 @@ def category_check(cat):
     elif cat == '📗 Отработка долгов':
         return 'debts'
 
-    elif cat == '🗞 Расписание учебных и внеучебных мероприятий':
+    elif cat == '🗞 Расписание мероприятий':
         return 'timetable'
 
 
@@ -191,7 +191,7 @@ async def menu(message: types.Message):
     elif message.text == '📗 Отработка долгов':
         await data_output('debts', message)
 
-    elif message.text == '🗞 Расписание учебных и внеучебных мероприятий':
+    elif message.text == '🗞 Расписание мероприятий':
         await data_output('timetable', message)
 
     elif message.text == '❓ Задать вопрос':
@@ -248,7 +248,8 @@ async def data_output(a, message):
 
 
 async def socials(message):
-    await bot.send_message(message.from_user.id, f'👥 Социальные сети кафедры\n<a href="https://vk.com/">VK</a>'
+    await bot.send_message(message.from_user.id, f'👥 Социальные сети кафедры\n'
+                                                 f'<a href="https://vk.com/omskpoliteh">VK</a>'
                                                  '\n<a href="https://www.instagram.com/">IG</a>', parse_mode="HTML")
 
 
