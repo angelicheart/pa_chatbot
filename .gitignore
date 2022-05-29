@@ -1,5 +1,5 @@
 .idea
-
+users.db
 # keys
 config.py
 service-account-file.json
