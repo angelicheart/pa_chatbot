@@ -10,9 +10,9 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-from config import telegram_token, project_id, users
+from config import telegram_token, project_id, admins
 import keyboards as nav
-
+from db import Database
 
 bot = Bot(token=telegram_token)
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +34,7 @@ def read_data():
 
 
 data = read_data()
+db = Database('users.db')
 
 
 def add_json(new_data, category, filename='data.json'):
@@ -51,9 +52,19 @@ def get_rand_data(s):
     return string
 
 
-@dp.message_handler(commands=['start', 'menu'])
+@dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    await message.answer('Привет, {0.first_name}'.format(message.from_user), reply_markup=nav.welcome_keyboard)
+    if not db.user_exists(message.from_user.id):
+        db.add_user(message.from_user.id)
+
+    await bot.send_message(message.from_user.id, 'Выберите курс', reply_markup=nav.num)
+
+
+@dp.message_handler(lambda message: message.chat.id in admins, commands=['post'])
+async def post(message: types.Message):
+    text = "📍 "
+    text += message.text[6:]
+    await send_all(text, message)
 
 
 def category_check(cat):
@@ -81,14 +92,25 @@ class FormRemove(StatesGroup):
     name = State()
 
 
-@dp.message_handler(lambda message: message.chat.id in users, commands=['add', 'добавить'])
+async def send_all(text, message):
+    users = db.get_users()
+    for row in users:
+        try:
+            await bot.send_message(row[0], text)
+            if int(row[1]) != 1:
+                db.set_active(row[0], 1)
+        except: db.set_active(row[0], 0)
+    await bot.send_message(message.from_user.id, "[accept]")
+
+
+@dp.message_handler(lambda message: message.chat.id in admins, commands=['add', 'добавить'])
 async def cmd_add_start(message: types.Message):
     await FormAdd.category.set()
     markup = nav.add_remove
     await message.reply("Выберите категорию", reply_markup=markup)
 
 
-@dp.message_handler(lambda message: message.chat.id in users, commands=['remove', 'удалить'])
+@dp.message_handler(lambda message: message.chat.id in admins, commands=['remove', 'удалить'])
 async def cmd_remove_start(message: types.Message):
     await FormRemove.category.set()
     markup = nav.add_remove
@@ -98,7 +120,6 @@ async def cmd_remove_start(message: types.Message):
 @dp.message_handler(state='*', commands='cancel')
 @dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
 async def cancel_handler(message: types.Message, state: FSMContext):
-
     current_state = await state.get_state()
     if current_state is None:
         return
@@ -164,6 +185,9 @@ async def process_description(message: types.Message, state: FSMContext):
            "description": data_add['description']}
 
     add_json(obj, category_check(data_add['category']))
+    msg = f"📍 Добавлена новая активность в категорию {data_add['category']}\n"
+    msg += f'📌 {data_add["name"]}\n{data_add["description"]}\n\n\n'
+    await send_all(msg, message)
 
     await bot.send_message(message.from_user.id, "Объект успешно добавлен", reply_markup=nav.welcome_keyboard)
     global data
@@ -193,6 +217,12 @@ async def menu(message: types.Message):
 
     elif message.text == '🗞 Расписание мероприятий':
         await data_output('timetable', message)
+
+    elif message.text == '🌎 Полезные ссылки':
+        await useful(message)
+
+    elif message.text == '🗓 Учебный план':
+        await data_output(db.get_course(message.from_user.id), message)
 
     elif message.text == '❓ Задать вопрос':
         await bot.send_message(message.from_user.id, 'Вы можете задать вопрос боту, который перенаправит вас на\
@@ -237,20 +267,32 @@ async def response_button(call: types.CallbackQuery):
     await data_output(call.data, call)
 
 
+@dp.callback_query_handler(text=['1', '2', '3', '4'])
+async def response_button(call: types.CallbackQuery):
+    db.set_course(call.from_user.id, call.data)
+    await call.message.delete()
+    await call.message.answer('Привет, {0.first_name}'.format(call.from_user), reply_markup=nav.welcome_keyboard)
+
+
 async def data_output(a, message):
     string = ''
     for i in data[a]:
         string += f'📌 {i["name"]}\n{i["description"]}\n\n\n'
     if string != '':
-        await bot.send_message(message.from_user.id, string)
+        await bot.send_message(message.from_user.id, string, disable_web_page_preview=True)
     else:
         await bot.send_message(message.from_user.id, 'Категория пуста')
 
 
 async def socials(message):
     await bot.send_message(message.from_user.id, f'👥 Социальные сети кафедры\n'
-                                                 f'<a href="https://vk.com/omskpoliteh">VK</a>'
-                                                 '\n<a href="https://www.instagram.com/">IG</a>', parse_mode="HTML")
+    f'<a href="https://vk.com/omskpoliteh">VK</a>'
+    '\n<a href="https://www.instagram.com/">IG</a>', parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def useful(message):
+    await bot.send_message(message.from_user.id, f'🌎 Полезные ссылки\n\n'
+    f'<a href="https://yadi.sk/i/cElOEwMybYpyVw">📍 Нормконтроль отчетов</a>\n', parse_mode="HTML", disable_web_page_preview=True)
 
 
 if __name__ == "__main__":

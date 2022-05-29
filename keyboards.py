@@ -4,6 +4,7 @@ from aiogram.types import \
 
 
 welcome_keyboard = ReplyKeyboardMarkup(resize_keyboard=True).row('📚 Категории', '❓ Задать вопрос')
+welcome_keyboard.row('🗓 Учебный план', '🌎 Полезные ссылки')
 
 menuButton = KeyboardButton('🔝 Главное меню')
 
@@ -33,3 +34,11 @@ inlineDeadline = InlineKeyboardMarkup().add(button4)
 
 button5 = InlineKeyboardButton(text="🗞 Расписание мероприятий", callback_data="timetable")
 inlineTimetable = InlineKeyboardMarkup().add(button5)
+
+numb1 = InlineKeyboardButton(text="1", callback_data="1")
+numb2 = InlineKeyboardButton(text="2", callback_data="2")
+numb3 = InlineKeyboardButton(text="3", callback_data="3")
+numb4 = InlineKeyboardButton(text="4", callback_data="4")
+
+num = InlineKeyboardMarkup().add(numb1, numb2)
+num.add(numb3, numb4)
